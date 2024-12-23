@@ -1,0 +1,87 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  dockerRegistryService: 'your-docker-registry-service-connection'
+  dockerRegistryUrl: 'https://your-docker-registry-url.com'
+  dockerImageName: 'your-docker-image-name'
+  canaryDeploymentPercentage: 20
+
+stages:
+- build
+- deploy
+
+build:
+  stage: build
+  displayName: 'Build and Push Docker Image'
+  jobs:
+  - job: build
+    displayName: 'Build and Push Docker Image'
+    steps:
+    - task: Docker@2
+      displayName: 'Build and Push Docker Image'
+      inputs:
+        command: 'buildAndPush'
+        Dockerfile: 'path/to/Dockerfile'
+        containerRegistry: $(dockerRegistryService)
+        tags: $(dockerImageName):$(Build.BuildId)
+
+deploy:
+  stage: deploy
+  displayName: 'Canary Deployment'
+  dependsOn: build
+  jobs:
+  - job: deploy
+    displayName: 'Canary Deployment'
+    steps:
+    - task: AzureAppServiceDeployment@4
+      displayName: 'Deploy to Canary Environment'
+      inputs:
+        azureSubscription: 'your-azure-subscription'
+        appType: 'webApp'
+        appName: 'your-app-name'
+        slotName: 'canary'
+        package: '$(System.ArtifactsDirectory)/$(dockerImageName).zip'
+        deployToSlotOrASE: true
+        resourceGroupName: 'your-resource-group-name'
+        deploymentMethod: 'runFromPackage'
+        enableOAuth: true
+        oauth2ClientID: 'your-oauth2-client-id'
+        oauth2ClientSecret: 'your-oauth2-client-secret'
+        oauth2TenantID: 'your-oauth2-tenant-id'
+        oauth2Resource: 'https://your-oauth2-resource.com'
+        oauth2Scope: 'https://your-oauth2-scope.com/.default'
+        oauth2ResponseType: 'code'
+        oauth2GrantType: 'authorization_code'
+        oauth2RedirectUri: 'https://your-oauth2-redirect-uri.com'
+        oauth2TokenEndpoint: 'https://your-oauth2-token-endpoint.com'
+        oauth2AuthorizationEndpoint: 'https://your-oauth2-authorization-endpoint.com'
+        oauth2RefreshTokenEndpoint: 'https://your-oauth2-refresh-token-endpoint.com'
+
+    - task: AzureAppServiceDeployment@4
+      displayName: 'Deploy to Production Environment'
+      inputs:
+        azureSubscription: 'your-azure-subscription'
+        appType: 'webApp'
+        appName: 'your-app-name'
+        slotName: 'production'
+        package: '$(System.ArtifactsDirectory)/$(dockerImageName).zip'
+        deployToSlotOrASE: true
+        resourceGroupName: 'your-resource-group-name'
+        deploymentMethod: 'runFromPackage'
+        enableOAuth: true
+        oauth2ClientID: 'your-oauth2-client-id'
+        oauth2ClientSecret: 'your-oauth2-client-secret'
+        oauth2TenantID: 'your-oauth2-tenant-id'
+        oauth2Resource: 'https://your-oauth2-resource.com'
+        oauth2Scope: 'https://your-oauth2-scope.com/.default'
+        oauth2ResponseType: 'code'
+        oauth2GrantType: 'authorization_code'
+        oauth2RedirectUri: 'https://your-oauth2-redirect-uri.com'
+        oauth2TokenEndpoint: 'https://your-oauth2-token-endpoint.com'
+        oauth2AuthorizationEndpoint: 'https://your-oauth2-authorization-endpoint.com'
+        oauth2RefreshTokenEndpoint: 'https://your-oauth2-refresh-token-endpoint.com'
+        canaryDeploymentPercentage: $(canaryDeploymentPercentage)
